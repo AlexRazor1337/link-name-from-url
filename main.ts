@@ -9,6 +9,8 @@ const DEFAULT_SETTINGS: PluginSettings = {
 }
 
 const isValidURL = (url: string) => {
+	if (url.endsWith(')') && url.startsWith('[') && url.includes('](')) return false;
+
 	let urlObj: URL;
 	
 	try {
@@ -48,7 +50,7 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 					case 'source':
 						if (!checking) {
 							if ('editor' in view) {
-								const selection = view.editor.getSelection().trim();
+								const selection = view.editor.getSelection().trim(); // TODO try get the nearest URL
 								if (!isValidURL(selection)) return false;
 
 								view.editor.replaceSelection(urlToHyperlink(selection));
@@ -69,7 +71,7 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
 				if (!view || !this.settings.autoConvert) return false;
 
-				const clipboardText = clipboard.clipboardData.getData("text/plain");
+				const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
 				if (clipboardText == null || clipboardText == "") return;
 
 				if (!isValidURL(clipboardText)) return;
@@ -77,7 +79,7 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 				clipboard.stopPropagation();
 				clipboard.preventDefault();
 			
-				view.editor.replaceSelection(urlToHyperlink(clipboardText.trim()));
+				view.editor.replaceSelection(urlToHyperlink(clipboardText));
 			}))
 		}
 	}
