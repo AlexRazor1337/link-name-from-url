@@ -1,4 +1,4 @@
-import { App, MarkdownView, Modal, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, MarkdownView, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface PluginSettings {
 	autoConvert: boolean;
@@ -6,6 +6,30 @@ interface PluginSettings {
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	autoConvert: true
+}
+
+const isValidURL = (url: string) => {
+	let urlObj: URL;
+	
+	try {
+		urlObj = new URL(url);
+	} catch (_) {
+		return false;  
+	}
+
+	return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+}
+
+const urlToHyperlink = (url: string) => {
+	const elements = url.split('/')
+	let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
+	
+	name = name.split('.')[0].split('?')[0].replace(/-|_/gm, ' ')
+	.split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+	return `[${name}](${url})`;
 }
 
 export default class LinkNameFromUrlPlugin extends Plugin {
@@ -17,25 +41,33 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 			id: 'get-link-name-from-url',
 			name: 'Get link name from URL',
 			checkCallback: (checking: boolean) => {
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+				if (!view) return false;
+				const view_mode = view.getMode();
+				switch (view_mode) {
+					case 'source':
+						if (!checking) {
+							if ('editor' in view) {
+								const selection = view.editor.getSelection();
+								if (!isValidURL(selection)) return false;
 
-					return true;
+								view.editor.replaceSelection(urlToHyperlink(selection));
+							}
+						}
+
+						return true;
+					default:
+						return false;
 				}
 			}
 		});
 
 		this.addSettingTab(new SettingTab(this.app, this));
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
 		if (this.settings.autoConvert) {
-			this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-				console.log('click', evt);
-			});
+			this.registerEvent(this.app.workspace.on('editor-paste', (e: ClipboardEvent) => {
+				console.log(e)
+			}))
 		}
 	}
 
@@ -49,22 +81,6 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
 	}
 }
 
