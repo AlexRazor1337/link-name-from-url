@@ -64,6 +64,35 @@ export default class LinkNameFromUrlPlugin extends Plugin {
             }
         });
 
+        this.addCommand({
+            id: 'get-link-name-from-url-multiline',
+            name: 'Get link names from multiple lines',
+            checkCallback: (checking: boolean) => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (!view) return false;
+                const view_mode = view.getMode();
+                switch (view_mode) {
+                    case 'source':
+                        if (!checking) {
+                            if ('editor' in view) {
+                                let selection = view.editor.getSelection().trim().split('\n'); // TODO try to get the nearest URL
+                                selection = selection.map(line => {
+                                    if (!isValidURL(line)) return line;
+
+                                    return urlToHyperlink(line.trim());
+                                });
+
+                                view.editor.replaceSelection(selection.join('\n'));
+                            }
+                        }
+
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+
         this.addSettingTab(new SettingTab(this.app, this));
 
         if (this.settings.autoConvert) {
