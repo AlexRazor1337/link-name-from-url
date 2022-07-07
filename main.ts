@@ -9,7 +9,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 }
 
 const isValidURL = (url: string) => {
-    if (url.endsWith(')') && url.startsWith('[') && url.includes('](')) return false;
+    if (url.endsWith(')') || url.startsWith('[') || url.includes('](')) return false;
 
     let urlObj: URL;
 
@@ -23,6 +23,8 @@ const isValidURL = (url: string) => {
 }
 
 const urlToHyperlink = (url: string) => {
+    if (!isValidURL(url)) return url;
+
     const elements = url.split('/')
     let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
 
@@ -34,15 +36,10 @@ const urlToHyperlink = (url: string) => {
     return `[${name}](${url})`;
 }
 
-const convertUrlsFromString = (text: string) => { // TODO get all urls by reg exp and replace them
-    let selection = text.trim().split('\n');
-    selection = selection.map(line => {
-        if (!isValidURL(line)) return line;
+const convertUrlsFromString = (text: string) => {
+    text = text.replace(/(https?|ftp):\/\/[^\s/$.?#].[^\s,]*/ig, urlToHyperlink);
 
-        return urlToHyperlink(line.trim());
-    });
-
-   return selection.join('\n');
+    return text;
 }
 
 export default class LinkNameFromUrlPlugin extends Plugin {
