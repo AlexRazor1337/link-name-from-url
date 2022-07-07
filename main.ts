@@ -1,124 +1,123 @@
 import { App, MarkdownView, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 interface PluginSettings {
-	autoConvert: boolean;
+    autoConvert: boolean;
 }
 
 const DEFAULT_SETTINGS: PluginSettings = {
-	autoConvert: true
+    autoConvert: true
 }
 
 const isValidURL = (url: string) => {
-	if (url.endsWith(')') && url.startsWith('[') && url.includes('](')) return false;
+    if (url.endsWith(')') && url.startsWith('[') && url.includes('](')) return false;
 
-	let urlObj: URL;
-	
-	try {
-		urlObj = new URL(url);
-	} catch (_) {
-		return false;  
-	}
+    let urlObj: URL;
 
-	return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+    try {
+        urlObj = new URL(url);
+    } catch (_) {
+        return false;
+    }
+
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
 }
 
-const urlToHyperlink = (url: string) => {
-	const elements = url.split('/')
-	let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
-	
-	name = name.split('.')[0].split('?')[0].replace(/-|_/gm, ' ')
-	.split(' ')
+const urlToHyperlink = (url: string) => { // TODO make conversion of multiple links
+    const elements = url.split('/')
+    let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
+
+    name = name.split('.')[0].split('?')[0].replace(/-|_/gm, ' ')
+    .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 
-	return `[${name}](${url})`;
+    return `[${name}](${url})`;
 }
 
 export default class LinkNameFromUrlPlugin extends Plugin {
-	settings: PluginSettings;
+    settings: PluginSettings;
 
-	async onload() {
-		await this.loadSettings();
-		this.addCommand({
-			id: 'get-link-name-from-url',
-			name: 'Get link name from URL',
-			checkCallback: (checking: boolean) => {
-				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (!view) return false;
-				const view_mode = view.getMode();
-				switch (view_mode) {
-					case 'source':
-						if (!checking) {
-							if ('editor' in view) {
-								const selection = view.editor.getSelection().trim(); // TODO try get the nearest URL
-								if (!isValidURL(selection)) return false;
+    async onload() {
+        await this.loadSettings();
+        this.addCommand({
+            id: 'get-link-name-from-url',
+            name: 'Get link name from URL',
+            checkCallback: (checking: boolean) => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (!view) return false;
+                const view_mode = view.getMode();
+                switch (view_mode) {
+                    case 'source':
+                        if (!checking) {
+                            if ('editor' in view) {
+                                const selection = view.editor.getSelection().trim(); // TODO try to get the nearest URL
+                                if (!isValidURL(selection)) return false;
 
-								view.editor.replaceSelection(urlToHyperlink(selection));
-							}
-						}
+                                view.editor.replaceSelection(urlToHyperlink(selection));
+                            }
+                        }
 
-						return true;
-					default:
-						return false;
-				}
-			}
-		});
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
 
-		this.addSettingTab(new SettingTab(this.app, this));
+        this.addSettingTab(new SettingTab(this.app, this));
 
-		if (this.settings.autoConvert) {
-			this.registerEvent(this.app.workspace.on('editor-paste', (clipboard: ClipboardEvent) => {
-				const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (!view || !this.settings.autoConvert) return false;
+        if (this.settings.autoConvert) {
+            this.registerEvent(this.app.workspace.on('editor-paste', (clipboard: ClipboardEvent) => {
+                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (!view || !this.settings.autoConvert) return false;
 
-				const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
-				if (clipboardText == null || clipboardText == "") return;
+                const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
+                if (clipboardText == null || clipboardText == "") return;
 
-				if (!isValidURL(clipboardText)) return;
+                if (!isValidURL(clipboardText)) return;
 
-				clipboard.stopPropagation();
-				clipboard.preventDefault();
-			
-				view.editor.replaceSelection(urlToHyperlink(clipboardText));
-			}))
-		}
-	}
+                clipboard.stopPropagation();
+                clipboard.preventDefault();
 
-	onunload() {
+                view.editor.replaceSelection(urlToHyperlink(clipboardText));
+            }))
+        }
+    }
 
-	}
+    onunload() {
 
-	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-	}
+    }
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-	}
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
+    }
 }
 
 class SettingTab extends PluginSettingTab {
-	plugin: LinkNameFromUrlPlugin;
+    plugin: LinkNameFromUrlPlugin;
 
-	constructor(app: App, plugin: LinkNameFromUrlPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    constructor(app: App, plugin: LinkNameFromUrlPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
 
-	display(): void {
-		const {containerEl} = this;
+    display(): void {
+        const {containerEl} = this;
 
-		containerEl.empty();
+        containerEl.empty();
 
-		new Setting(containerEl)
-			.setName('Auto convert')
-			.setDesc('Automatically convert links to hyperlinks with name.')
-			.addToggle(text => text
-				.setValue(this.plugin.settings.autoConvert)
-				.onChange(async (value) => {
-					this.plugin.settings.autoConvert = value;
-					console.log(value);
-					await this.plugin.saveSettings();
-				}));
-	}
+        new Setting(containerEl)
+            .setName('Auto convert')
+            .setDesc('Automatically convert links to hyperlinks with name.')
+            .addToggle(text => text
+                .setValue(this.plugin.settings.autoConvert)
+                .onChange(async (value) => {
+                    this.plugin.settings.autoConvert = value;
+                    await this.plugin.saveSettings();
+                }));
+    }
 }
