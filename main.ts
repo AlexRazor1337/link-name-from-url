@@ -79,7 +79,7 @@ export default class LinkNameFromUrlPlugin extends Plugin {
                 const view = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (!view || !this.settings.autoConvert) return false;
 
-                const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
+                const clipboardText = clipboard.clipboardData!.getData("text/plain").trim();
                 if (clipboardText == null || clipboardText == "") return;
                 if (!clipboardText.includes('http')) return;
 
