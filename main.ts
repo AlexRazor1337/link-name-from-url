@@ -34,7 +34,7 @@ const urlToHyperlink = (url: string) => {
     return `[${name}](${url})`;
 }
 
-const convertUrlsFromString = (text: string) => {
+const convertUrlsFromString = (text: string) => { // TODO get all urls by reg exp and replace them
     let selection = text.trim().split('\n');
     selection = selection.map(line => {
         if (!isValidURL(line)) return line;
@@ -62,9 +62,9 @@ export default class LinkNameFromUrlPlugin extends Plugin {
                         if (!checking) {
                             if ('editor' in view) {
                                 const selection = view.editor.getSelection(); // TODO try to get the nearest URL
+                                if (!selection.includes('http')) return false;
 
                                 view.editor.replaceSelection(convertUrlsFromString(selection));
-                                return true;
                             }
                         }
 
@@ -84,6 +84,7 @@ export default class LinkNameFromUrlPlugin extends Plugin {
 
                 const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
                 if (clipboardText == null || clipboardText == "") return;
+                if (!clipboardText.includes('http')) return;
 
                 clipboard.stopPropagation();
                 clipboard.preventDefault();
