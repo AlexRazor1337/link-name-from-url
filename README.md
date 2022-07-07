@@ -7,11 +7,11 @@ This plugin was created as an alternative to the [obsidian-auto-link-title plugi
 ## How to use
 
 - Install the plugin
-- Select URL and run `get-link-name-from-url` command
+- Select URL or text with URLs and run `get-link-name-from-url` command
 
 Or you can enable `Auto convert` setting in the plugin settings. It will automatically convert URLs you paste.
 
-## Manually installing the plugin
+## Installation (manual)
 
-- Download latest release from the **Releases** tab
-- Copy over `main.js`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/link-name-from-url/`.
+- Download [latest release](https://github.com/AlexRazor1337/link-name-from-url/releases/latest/) from the **Releases** tab.
+- Copy folder from the archive to your vault plugins folder (`VaultFolder/.obsidian/plugins`).
