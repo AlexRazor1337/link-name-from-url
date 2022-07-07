@@ -22,7 +22,7 @@ const isValidURL = (url: string) => {
     return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
 }
 
-const urlToHyperlink = (url: string) => { // TODO make conversion of multiple links
+const urlToHyperlink = (url: string) => {
     const elements = url.split('/')
     let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
 
@@ -32,6 +32,17 @@ const urlToHyperlink = (url: string) => { // TODO make conversion of multiple li
     .join(' ');
 
     return `[${name}](${url})`;
+}
+
+const convertUrlsFromString = (text: string) => {
+    let selection = text.trim().split('\n');
+    selection = selection.map(line => {
+        if (!isValidURL(line)) return line;
+
+        return urlToHyperlink(line.trim());
+    });
+
+   return selection.join('\n');
 }
 
 export default class LinkNameFromUrlPlugin extends Plugin {
@@ -50,39 +61,10 @@ export default class LinkNameFromUrlPlugin extends Plugin {
                     case 'source':
                         if (!checking) {
                             if ('editor' in view) {
-                                const selection = view.editor.getSelection().trim(); // TODO try to get the nearest URL
-                                if (!isValidURL(selection)) return false;
+                                const selection = view.editor.getSelection(); // TODO try to get the nearest URL
 
-                                view.editor.replaceSelection(urlToHyperlink(selection));
-                            }
-                        }
-
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        });
-
-        this.addCommand({
-            id: 'get-link-name-from-url-multiline',
-            name: 'Get link names from multiple lines',
-            checkCallback: (checking: boolean) => {
-                const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (!view) return false;
-                const view_mode = view.getMode();
-                switch (view_mode) {
-                    case 'source':
-                        if (!checking) {
-                            if ('editor' in view) {
-                                let selection = view.editor.getSelection().trim().split('\n'); // TODO try to get the nearest URL
-                                selection = selection.map(line => {
-                                    if (!isValidURL(line)) return line;
-
-                                    return urlToHyperlink(line.trim());
-                                });
-
-                                view.editor.replaceSelection(selection.join('\n'));
+                                view.editor.replaceSelection(convertUrlsFromString(selection));
+                                return true;
                             }
                         }
 
@@ -103,12 +85,10 @@ export default class LinkNameFromUrlPlugin extends Plugin {
                 const clipboardText = clipboard.clipboardData.getData("text/plain").trim();
                 if (clipboardText == null || clipboardText == "") return;
 
-                if (!isValidURL(clipboardText)) return;
-
                 clipboard.stopPropagation();
                 clipboard.preventDefault();
 
-                view.editor.replaceSelection(urlToHyperlink(clipboardText));
+                view.editor.replaceSelection(convertUrlsFromString(clipboardText));
             }))
         }
     }
