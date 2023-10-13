@@ -30,9 +30,9 @@ const urlToHyperlink = (url: string) => {
     let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
 
     name = name.split('.')[0].split('?')[0].replace(/-|_/gm, ' ')
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 
     return `[${name}](${url})`;
 }
@@ -57,13 +57,13 @@ export default class LinkNameFromUrlPlugin extends Plugin {
                 const view_mode = view.getMode();
                 switch (view_mode) {
                     case 'source':
-                        if (!checking) {
-                            if ('editor' in view) {
-                                const selection = view.editor.getSelection(); // TODO try to get the nearest URL
-                                if (!selection.includes('http')) return false;
-
-                                view.editor.replaceSelection(convertUrlsFromString(selection));
+                        if (!checking && 'editor' in view) {
+                            const selection = view.editor.getSelection(); // TODO try to get the nearest URL
+                            if (!selection.includes('http')) {
+                                return false;
                             }
+
+                            view.editor.replaceSelection(convertUrlsFromString(selection));
                         }
 
                         return true;
@@ -114,7 +114,7 @@ class SettingTab extends PluginSettingTab {
     }
 
     display(): void {
-        const {containerEl} = this;
+        const { containerEl } = this;
 
         containerEl.empty();
 
