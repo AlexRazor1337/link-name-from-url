@@ -25,7 +25,7 @@ const isValidURL = (url: string) => {
 const urlToHyperlink = (url: string) => {
     if (!isValidURL(url)) return url;
 
-    url = url.trim().replace('www.', '');
+    url = url.trim().toLocaleLowerCase().replace('www.', '');
     const elements = url.split('/')
     let name = elements[elements.length - 1] !== '' ? elements[elements.length - 1] : elements[elements.length - 2];
 
